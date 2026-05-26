@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:;">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Password Generator — Solarpunk</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg-page: #f0f9f4;
+  --bg-card: #ffffff;
+  --border-card: #95d5b2;
+  --shadow-card: 0 4px 20px rgba(45, 106, 79, 0.1);
+  --radius-card: 24px;
+  --radius-input: 12px;
+  --radius-btn: 16px;
+  --text-primary: #2d6a4f;
+  --text-secondary: #40916c;
+  --text-muted: #74c69d;
+  --accent: #52b788;
+  --accent-hover: #40916c;
+  --light-green: #d8f3dc;
+  --btn-bg: #2d6a4f;
+  --btn-hover: #1b4332;
+  --input-border: #95d5b2;
+  --input-focus-border: #2d6a4f;
+  --input-focus-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15);
+  --transition: 0.3s ease;
+  --font: system-ui, -apple-system, sans-serif;
+  --strength-weak: #e63946;
+  --strength-medium: #f4a261;
+  --strength-strong: #52b788;
+  --strength-vstrong: #2d6a4f;
+  --char-letter: #2d6a4f;
+  --char-number: #1a936f;
+  --char-symbol: #e09f3e;
+}
+
+html{font-size:16px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+body {
+  font-family: var(--font);
+  background: var(--bg-page);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, #d8f3dc 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, #d8f3dc 0%, transparent 50%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px 60px;
+}
+
+/* ── Layout ──────────────────────────────── */
+.layout {
+  display: flex;
+  gap: 28px;
+  max-width: 1060px;
+  width: 100%;
+  align-items: flex-start;
+}
+
+/* ── Card entrance ───────────────────────── */
+.card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 52px 48px;
+  max-width: 640px;
+  width: 100%;
+  animation: cardIn .6s var(--transition) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ──────────────────────────────── */
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.header .leaf-icon {
+  display: inline-block;
+  animation: sway 3s ease-in-out infinite;
+}
+@keyframes sway {
+  0%,100% { transform: rotate(-4deg); }
+  50%     { transform: rotate(4deg); }
+}
+.header h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-top: 10px;
+  letter-spacing: -.02em;
+}
+.header .subtitle {
+  font-size: .95rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+/* ── Language toggle ─────────────────────── */
+.lang-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--light-green);
+  border: 1px solid var(--border-card);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  z-index: 1;
+  line-height: 1.4;
+}
+.lang-toggle:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.lang-toggle:active { transform: scale(.94); }
+
+/* ── Section spacing ─────────────────────── */
+.section { margin-bottom: 32px; }
+.section:last-of-type { margin-bottom: 0; }
+
+.section-label {
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-label-row .section-label { margin-bottom: 0; }
+.clear-btn {
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all .25s ease;
+}
+.clear-btn:hover { color: #e63946; border-color: #e63946; background: #fff0f0; }
+.clear-btn:active { transform: scale(.94); }
+
+/* ── Password display ────────────────────── */
+.pw-display {
+  background: var(--light-green);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-input);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.pw-display:focus-within {
+  border-color: var(--input-focus-border);
+  box-shadow: var(--input-focus-shadow);
+}
+.pw-text {
+  flex: 1;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.2rem;
+  word-break: break-all;
+  line-height: 1.5;
+  user-select: all;
+  min-height: 1.5em;
+}
+.pw-text .ch-letter  { color: var(--char-letter); }
+.pw-text .ch-number  { color: var(--char-number); }
+.pw-text .ch-symbol  { color: var(--char-symbol); }
+.pw-text .ch-placeholder { color: var(--text-muted); font-style: italic; }
+
+/* ── Copy button ─────────────────────────── */
+.copy-btn {
+  flex-shrink: 0;
+  background: var(--btn-bg);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), transform .15s ease;
+  white-space: nowrap;
+}
+.copy-btn:hover { background: var(--btn-hover); }
+.copy-btn:active { transform: scale(.95); }
+.copy-btn.copied {
+  background: var(--accent);
+}
+
+/* ── Strength bar ─────────────────────────── */
+.strength-wrap {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.strength-track {
+  flex: 1;
+  height: 6px;
+  background: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.strength-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width var(--transition), background var(--transition);
+  width: 0%;
+}
+.strength-label {
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  min-width: 80px;
+  text-align: right;
+  transition: color var(--transition);
+}
+
+/* ── Slider ───────────────────────────────── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.slider-row input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--light-green);
+  border-radius: 3px;
+  outline: none;
+  transition: background var(--transition);
+}
+.slider-row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(45,106,79,.25);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.slider-row input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 12px rgba(45,106,79,.35);
+}
+.slider-row input[type=range]::-moz-range-thumb {
+  width: 22px; height: 22px;
+  background: var(--accent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(45,106,79,.25);
+  transition: transform var(--transition);
+}
+.slider-row input[type=range]::-moz-range-track {
+  height: 6px;
+  background: var(--light-green);
+  border-radius: 3px;
+}
+.slider-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  min-width: 36px;
+  text-align: center;
+}
+
+/* ── Toggle switches ─────────────────────── */
+.toggles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 6px 12px;
+}
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+.toggle-row .toggle-name {
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.toggle-row .toggle-hint {
+  font-size: .68rem;
+  color: var(--text-muted);
+  margin-top: 0;
+}
+.exclude-row {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0 2px;
+}
+.exclude-row .toggle-name {
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.exclude-input {
+  width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  font-size: .85rem;
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--text-primary);
+  background: var(--light-green);
+  outline: none;
+  transition: all var(--transition);
+  box-sizing: border-box;
+}
+.exclude-input::placeholder { color: var(--text-muted); font-family: system-ui, sans-serif; }
+.exclude-input:focus { border-color: var(--text-primary); box-shadow: 0 0 0 3px rgba(45,106,79,.1); }
+
+/* Toggle switch component */
+.toggle {
+  position: relative;
+  width: 44px; height: 24px;
+  flex-shrink: 0;
+}
+.toggle input {
+  opacity: 0; width: 0; height: 0;
+  position: absolute;
+}
+.toggle .track {
+  position: absolute;
+  inset: 0;
+  background: #ced4da;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.toggle .track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+  transition: transform var(--transition);
+}
+.toggle input:checked + .track {
+  background: var(--accent);
+}
+.toggle input:checked + .track::after {
+  transform: translateX(20px);
+}
+.toggle input:focus-visible + .track {
+  box-shadow: 0 0 0 3px rgba(82,183,136,.35);
+}
+
+/* ── Generate button ──────────────────────── */
+.generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--btn-bg);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-btn);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), transform .15s ease, box-shadow var(--transition);
+  box-shadow: 0 4px 14px rgba(45,106,79,.2);
+}
+.generate-btn:hover {
+  background: var(--btn-hover);
+  box-shadow: 0 6px 20px rgba(45,106,79,.3);
+}
+.generate-btn:active {
+  transform: scale(.97);
+}
+.generate-btn svg { flex-shrink: 0; }
+
+/* ── History ──────────────────────────────── */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--light-green);
+  border-radius: 10px;
+  transition: background var(--transition);
+}
+.history-item:hover { background: #c4edda; }
+.history-item .idx {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 18px;
+}
+.history-item .pw {
+  flex: 1;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: .85rem;
+  word-break: break-all;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+.history-item .mini-copy {
+  background: transparent;
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.history-item .mini-copy:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.history-item .mini-copy:active { transform: scale(.94); }
+.history-item .str-badge {
+  font-size: .65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+  color: #fff;
+  flex-shrink: 0;
+}
+.history-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: .85rem;
+  padding: 16px 0;
+  font-style: italic;
+}
+
+/* ── Footer ───────────────────────────────── */
+.footer {
+  margin-top: 36px;
+  text-align: center;
+  font-size: .78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* ── Promise panel ────────────────────────── */
+.promise {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 36px 32px;
+  flex-shrink: 0;
+  width: 320px;
+  position: sticky;
+  top: 40px;
+  animation: cardIn .6s .15s var(--transition) both;
+}
+.promise h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.promise h2 .shield {
+  flex-shrink: 0;
+}
+.promise-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.promise-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.promise-item .icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--light-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.promise-item .text strong {
+  display: block;
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.promise-item .text span {
+  font-size: .78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.promise-note {
+  margin-top: 24px;
+  padding: 14px 16px;
+  background: var(--light-green);
+  border-radius: 12px;
+  font-size: .75rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ── Divider ──────────────────────────────── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--light-green);
+  margin: 0;
+}
+
+/* ── Responsive ───────────────────────────── */
+
+/* ── Stack layout on medium screens ── */
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+    align-items: center;
+  }
+  .promise {
+    width: 100%;
+    max-width: 640px;
+    position: static;
+  }
+}
+
+/* ── Small tablets & large phones ── */
+@media (max-width: 640px) {
+  body {
+    padding: 24px 16px 40px;
+  }
+  .card {
+    padding: 36px 32px;
+  }
+  .header {
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: 1.6rem;
+  }
+  .header .subtitle {
+    font-size: 0.88rem;
+  }
+  .section {
+    margin-bottom: 24px;
+  }
+  .pw-display {
+    padding: 14px 16px;
+  }
+  .pw-text {
+    font-size: 1.1rem;
+  }
+  .toggles-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .generate-btn {
+    padding: 14px 20px;
+  }
+  .history-list {
+    max-height: 360px;
+  }
+  .footer {
+    margin-top: 28px;
+    font-size: 0.74rem;
+  }
+}
+
+/* ── Standard phones ── */
+@media (max-width: 480px) {
+  body {
+    padding: 16px 12px 32px;
+  }
+  .card {
+    padding: 24px 20px;
+    border-radius: 20px;
+  }
+  .header {
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 1.4rem;
+  }
+  .header .subtitle {
+    font-size: 0.82rem;
+  }
+  .section {
+    margin-bottom: 20px;
+  }
+  .section-label {
+    font-size: 0.74rem;
+    margin-bottom: 10px;
+  }
+  .pw-display {
+    padding: 12px 14px;
+    gap: 8px;
+    min-height: 52px;
+  }
+  .pw-text {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+  .copy-btn {
+    padding: 8px 12px;
+    font-size: 0.76rem;
+    border-radius: 8px;
+    /* Ensure 44px touch target */
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .strength-wrap {
+    margin-top: 8px;
+    gap: 8px;
+  }
+  .strength-label {
+    min-width: 60px;
+    font-size: 0.7rem;
+  }
+  .slider-value {
+    font-size: 1.2rem;
+    min-width: 32px;
+  }
+  .toggles-grid {
+    gap: 4px 10px;
+  }
+  .toggle-row {
+    padding: 2px 0;
+    /* Increase tap area for toggles */
+    min-height: 44px;
+  }
+  .toggle-row .toggle-name {
+    font-size: 0.78rem;
+  }
+  .toggle-row .toggle-hint {
+    font-size: 0.64rem;
+  }
+  .generate-btn {
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    border-radius: 12px;
+  }
+  .history-list {
+    max-height: 300px;
+    gap: 6px;
+  }
+  .history-item {
+    padding: 8px 10px;
+    gap: 8px;
+    border-radius: 8px;
+  }
+  .history-item .pw {
+    font-size: 0.78rem;
+  }
+  .history-item .idx {
+    font-size: 0.65rem;
+    min-width: 16px;
+  }
+  .history-item .mini-copy {
+    padding: 5px 8px;
+    font-size: 0.68rem;
+    /* Ensure 44px touch target */
+    min-height: 34px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+  }
+  .history-item .str-badge {
+    font-size: 0.6rem;
+    padding: 2px 5px;
+    border-radius: 5px;
+  }
+  .footer {
+    margin-top: 24px;
+    font-size: 0.7rem;
+  }
+  .exclude-input {
+    font-size: 0.82rem;
+    padding: 7px 12px;
+  }
+}
+
+/* ── Small phones (iPhone SE, etc.) ── */
+@media (max-width: 360px) {
+  body {
+    padding: 12px 8px 28px;
+  }
+  .card {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+  .header {
+    margin-bottom: 20px;
+  }
+  .header .leaf-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+  .header h1 {
+    font-size: 1.25rem;
+    margin-top: 8px;
+  }
+  .header .subtitle {
+    font-size: 0.78rem;
+    margin-top: 4px;
+  }
+  .section {
+    margin-bottom: 16px;
+  }
+  .section-label {
+    font-size: 0.7rem;
+    margin-bottom: 8px;
+  }
+  .pw-display {
+    padding: 10px 12px;
+    gap: 6px;
+    min-height: 48px;
+    border-radius: 10px;
+  }
+  .pw-text {
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+  .copy-btn {
+    padding: 8px 10px;
+    font-size: 0.72rem;
+    border-radius: 8px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .strength-wrap {
+    margin-top: 6px;
+    gap: 6px;
+  }
+  .strength-label {
+    min-width: 50px;
+    font-size: 0.66rem;
+  }
+  .slider-row {
+    gap: 10px;
+  }
+  .slider-value {
+    font-size: 1.1rem;
+    min-width: 28px;
+  }
+  .toggles-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 8px;
+  }
+  .toggle-row {
+    min-height: 42px;
+  }
+  .toggle-row .toggle-name {
+    font-size: 0.74rem;
+  }
+  .toggle-row .toggle-hint {
+    font-size: 0.6rem;
+  }
+  .generate-btn {
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    gap: 8px;
+  }
+  .generate-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+  .history-list {
+    max-height: 260px;
+    gap: 5px;
+  }
+  .history-item {
+    padding: 7px 8px;
+    gap: 6px;
+  }
+  .history-item .idx {
+    display: none;
+  }
+  .history-item .pw {
+    font-size: 0.72rem;
+  }
+  .history-item .mini-copy {
+    padding: 4px 7px;
+    font-size: 0.64rem;
+    min-height: 34px;
+    min-width: 40px;
+  }
+  .history-item .str-badge {
+    font-size: 0.56rem;
+    padding: 1px 4px;
+  }
+  .exclude-input {
+    font-size: 0.78rem;
+    padding: 6px 10px;
+  }
+  .footer {
+    margin-top: 20px;
+    font-size: 0.66rem;
+    gap: 4px;
+  }
+  .footer svg {
+    width: 12px;
+    height: 12px;
+  }
+  .clear-btn {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    min-height: 32px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+<div class="card">
+  <!-- Language toggle -->
+  <button class="lang-toggle" id="langToggle">🌐 EN</button>
+
+  <!-- Header -->
+  <div class="header">
+    <span class="leaf-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="hLeaf" x1="0.5" y1="0" x2="0.5" y2="1"><stop offset="0%" stop-color="#52b788"/><stop offset="100%" stop-color="#2d6a4f"/></linearGradient></defs>
+        <path d="M12 2 C17 2, 21 6.5, 21 12 C21 18, 17 22, 12 22 C10.5 20, 8 16.5, 8 12 C8 7.5, 10.5 2, 12 2Z" fill="url(#hLeaf)"/>
+        <path d="M12 3 L12 21" stroke="#1b4332" stroke-width="0.8" stroke-linecap="round" opacity="0.5"/>
+        <path d="M12 7 L15.5 5.5" stroke="#1b4332" stroke-width="0.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M12 10.5 L16.5 9" stroke="#1b4332" stroke-width="0.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M12 14 L16.5 12.5" stroke="#1b4332" stroke-width="0.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M12 17.5 L15 16" stroke="#1b4332" stroke-width="0.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M12 7 L8.5 5.5" stroke="#1b4332" stroke-width="0.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M12 10.5 L7.5 9" stroke="#1b4332" stroke-width="0.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M12 14 L7.5 12.5" stroke="#1b4332" stroke-width="0.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M12 17.5 L9 16" stroke="#1b4332" stroke-width="0.6" stroke-linecap="round" opacity="0.35"/>
+        <path d="M12 22 Q13 23.5, 14 23.5" stroke="#2d6a4f" stroke-width="1" stroke-linecap="round" fill="none"/>
+      </svg>
+    </span>
+    <h1 data-i18n="heading">Password Generator</h1>
+    <p class="subtitle" data-i18n="subtitle">Grow strong passwords, naturally</p>
+  </div>
+
+  <!-- Password Display -->
+  <div class="section">
+    <div class="pw-display" id="pwDisplay">
+      <div class="pw-text" id="pwText">
+        <span class="ch-placeholder" data-i18n="placeholder">Click generate to grow a password</span>
+      </div>
+      <button class="copy-btn" id="copyBtn" data-i18n-title="copyTitle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span data-i18n="copy">Copy</span>
+      </button>
+    </div>
+    <div class="strength-wrap">
+      <div class="strength-track">
+        <div class="strength-fill" id="strengthFill"></div>
+      </div>
+      <span class="strength-label" id="strengthLabel">—</span>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Length Slider -->
+  <div class="section">
+    <div class="section-label" data-i18n="pwLength">Password Length</div>
+    <div class="slider-row">
+      <input type="range" id="lengthSlider" min="8" max="64" value="16">
+      <span class="slider-value" id="lengthValue">16</span>
+    </div>
+  </div>
+
+  <!-- Generate Button -->
+  <div class="section">
+    <button class="generate-btn" id="generateBtn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      <span data-i18n="generate">Generate Password</span>
+    </button>
+  </div>
+
+  <!-- Character Options -->
+  <div class="section">
+    <div class="section-label" data-i18n="charOptions">Character Options</div>
+    <div class="toggles-grid">
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-name" data-i18n="uppercase">Uppercase</div>
+          <div class="toggle-hint">A &ndash; Z</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="optUpper" checked>
+          <span class="track"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-name" data-i18n="lowercase">Lowercase</div>
+          <div class="toggle-hint">a &ndash; z</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="optLower" checked>
+          <span class="track"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-name" data-i18n="numbers">Numbers</div>
+          <div class="toggle-hint">0 &ndash; 9</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="optNumbers" checked>
+          <span class="track"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-name" data-i18n="symbols">Symbols</div>
+          <div class="toggle-hint">!@#$%^&amp;*...</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="optSymbols">
+          <span class="track"></span>
+        </label>
+      </div>
+      <div class="exclude-row">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <label class="toggle-name" for="excludeChars" data-i18n="excludeChars">Exclude Characters</label>
+          <label class="toggle">
+            <input type="checkbox" id="optExclude" checked>
+            <span class="track"></span>
+          </label>
+        </div>
+        <input type="text" id="excludeChars" class="exclude-input" value="iIl1o0O" data-i18n-placeholder="excludePlaceholder" spellcheck="false">
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- History -->
+  <div class="section">
+    <div class="section-label-row">
+      <div class="section-label"><span data-i18n="historyTitle">生成历史</span><span style="font-weight:400;font-size:.7rem;color:var(--text-muted);margin-left:8px" data-i18n="historySub">保留最近 100 条</span></div>
+      <button class="clear-btn" id="clearHistory" data-i18n="clear" data-i18n-title="clearTitle">清空</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty" data-i18n="historyEmpty">暂无生成记录</div>
+    </div>
+  </div>
+</div>
+
+<!-- Promise Panel -->
+<div class="promise">
+  <h2>
+    <svg class="shield" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+    <span data-i18n="promiseTitle">我们的承诺</span>
+  </h2>
+  <ul class="promise-list">
+    <li class="promise-item">
+      <div class="icon-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+      </div>
+      <div class="text">
+        <strong data-i18n="promise1Title">零数据收集</strong>
+        <span data-i18n="promise1Desc">不收集、不存储、不传输任何密码或个人信息</span>
+      </div>
+    </li>
+    <li class="promise-item">
+      <div class="icon-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </div>
+      <div class="text">
+        <strong data-i18n="promise2Title">纯本地运行</strong>
+        <span data-i18n="promise2Desc">所有密码在浏览器本地生成，无任何网络请求</span>
+      </div>
+    </li>
+    <li class="promise-item">
+      <div class="icon-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="text">
+        <strong data-i18n="promise3Title">无追踪器</strong>
+        <span data-i18n="promise3Desc">不含分析脚本、广告追踪或第三方 Cookie</span>
+      </div>
+    </li>
+    <li class="promise-item">
+      <div class="icon-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      </div>
+      <div class="text">
+        <strong data-i18n="promise4Title">开源透明</strong>
+        <span data-i18n="promise4Desc">单 HTML 文件，完整源码可见，可离线使用</span>
+      </div>
+    </li>
+    <li class="promise-item">
+      <div class="icon-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      </div>
+      <div class="text">
+        <strong data-i18n="promise5Title">加密安全</strong>
+        <span data-i18n="promise5Desc">使用 Web Crypto API 生成真随机数，拒绝不安全的 Math.random()</span>
+      </div>
+    </li>
+  </ul>
+</div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2 C17 2, 21 6.5, 21 12 C21 18, 17 22, 12 22 C10.5 20, 8 16.5, 8 12 C8 7.5, 10.5 2, 12 2Z" fill="#74c69d"/>
+    <path d="M12 3 L12 21" stroke="#52b788" stroke-width="0.6" stroke-linecap="round" opacity="0.4"/>
+  </svg>
+  <span data-i18n="footer">Powered by Solarpunk</span>
+</div>
+
+<script>
+// ── i18n ───────────────────────────────────
+var LANG = {
+  en: {
+    title: 'Password Generator \u2014 Solarpunk',
+    heading: 'Password Generator',
+    subtitle: 'Grow strong passwords, naturally',
+    placeholder: 'Click generate to grow a password',
+    copy: 'Copy',
+    copied: 'Copied!',
+    copyTitle: 'Copy to clipboard',
+    pwLength: 'Password Length',
+    generate: 'Generate Password',
+    charOptions: 'Character Options',
+    uppercase: 'Uppercase',
+    lowercase: 'Lowercase',
+    numbers: 'Numbers',
+    symbols: 'Symbols',
+    excludeChars: 'Exclude Characters',
+    excludePlaceholder: 'e.g. iIl1o0O',
+    historyTitle: 'Generation History',
+    historySub: 'Keeps last 100 records',
+    clear: 'Clear',
+    clearTitle: 'Clear history',
+    historyEmpty: 'No records yet',
+    promiseTitle: 'Our Promise',
+    promise1Title: 'Zero Data Collection',
+    promise1Desc: 'No collection, storage, or transmission of any passwords or personal information',
+    promise2Title: 'Fully Local',
+    promise2Desc: 'All passwords generated locally in your browser, zero network requests',
+    promise3Title: 'No Trackers',
+    promise3Desc: 'No analytics scripts, ad trackers, or third-party cookies',
+    promise4Title: 'Open Source',
+    promise4Desc: 'Single HTML file, fully visible source code, works offline',
+    promise5Title: 'Crypto Secure',
+    promise5Desc: 'Uses Web Crypto API for true randomness, no insecure Math.random()',
+    footer: 'Powered by Solarpunk',
+    strengthWeak: 'Weak',
+    strengthMedium: 'Medium',
+    strengthStrong: 'Strong',
+    strengthVStrong: 'Very Strong',
+    enableError: 'Enable at least one option'
+  },
+  zh: {
+    title: '密码生成器 \u2014 Solarpunk',
+    heading: '密码生成器',
+    subtitle: '自然生长，强健密码',
+    placeholder: '点击生成按钮获取密码',
+    copy: '复制',
+    copied: '已复制!',
+    copyTitle: '复制到剪贴板',
+    pwLength: '密码长度',
+    generate: '生成密码',
+    charOptions: '字符选项',
+    uppercase: '大写字母',
+    lowercase: '小写字母',
+    numbers: '数字',
+    symbols: '符号',
+    excludeChars: '排除字符',
+    excludePlaceholder: '例如 iIl1o0O',
+    historyTitle: '生成历史',
+    historySub: '保留最近 100 条',
+    clear: '清空',
+    clearTitle: '清空历史',
+    historyEmpty: '暂无生成记录',
+    promiseTitle: '我们的承诺',
+    promise1Title: '零数据收集',
+    promise1Desc: '不收集、不存储、不传输任何密码或个人信息',
+    promise2Title: '纯本地运行',
+    promise2Desc: '所有密码在浏览器本地生成，无任何网络请求',
+    promise3Title: '无追踪器',
+    promise3Desc: '不含分析脚本、广告追踪或第三方 Cookie',
+    promise4Title: '开源透明',
+    promise4Desc: '单 HTML 文件，完整源码可见，可离线使用',
+    promise5Title: '加密安全',
+    promise5Desc: '使用 Web Crypto API 生成真随机数，拒绝不安全的 Math.random()',
+    footer: '由 Solarpunk 驱动',
+    strengthWeak: '弱',
+    strengthMedium: '中',
+    strengthStrong: '强',
+    strengthVStrong: '极强',
+    enableError: '请至少启用一个选项'
+  }
+};
+
+var currentLang = 'en';
+var LANG_KEY = 'pw_lang';
+
+var STRENGTH_MAP = {
+  weak: 'strengthWeak',
+  medium: 'strengthMedium',
+  strong: 'strengthStrong',
+  vstrong: 'strengthVStrong'
+};
+
+function t(key) {
+  return (LANG[currentLang] && LANG[currentLang][key]) || (LANG.en[key]) || key;
+}
+
+function strengthLabel(key) {
+  return t(STRENGTH_MAP[key] || key);
+}
+
+var COPY_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+
+function setLang(lang) {
+  if (!LANG[lang]) lang = 'en';
+  currentLang = lang;
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.title = t('title');
+  localStorage.setItem(LANG_KEY, lang);
+
+  // Update all data-i18n elements (textContent)
+  var els = document.querySelectorAll('[data-i18n]');
+  for (var i = 0; i < els.length; i++) {
+    els[i].textContent = t(els[i].getAttribute('data-i18n'));
+  }
+  // Update data-i18n-placeholder elements
+  var phEls = document.querySelectorAll('[data-i18n-placeholder]');
+  for (var i = 0; i < phEls.length; i++) {
+    phEls[i].placeholder = t(phEls[i].getAttribute('data-i18n-placeholder'));
+  }
+  // Update data-i18n-title elements
+  var tiEls = document.querySelectorAll('[data-i18n-title]');
+  for (var i = 0; i < tiEls.length; i++) {
+    tiEls[i].title = t(tiEls[i].getAttribute('data-i18n-title'));
+  }
+
+  // Update language toggle button text
+  document.getElementById('langToggle').textContent = currentLang === 'en' ? '\uD83C\uDF10 EN' : '\uD83C\uDF10 \u4E2D\u6587';
+
+  // Re-render copy button if not in "copied" state
+  var copyBtn = document.getElementById('copyBtn');
+  if (!copyBtn.classList.contains('copied')) {
+    copyBtn.innerHTML = COPY_SVG + ' ' + t('copy');
+  }
+
+  // Re-render password placeholder if no current password
+  if (!currentPassword) {
+    document.getElementById('pwText').innerHTML = '<span class="ch-placeholder">' + escHtml(t('placeholder')) + '</span>';
+  }
+
+  // Re-render strength label if there's a current password
+  if (currentPassword) {
+    updateStrength(currentPassword);
+  }
+
+  // Re-render history
+  renderHistory();
+}
+
+// ── State ──────────────────────────────────
+var currentPassword = '';
+var STORAGE_KEY = 'pw_history';
+var pwHistory = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+var MAX_HISTORY = 100;
+
+var UPPER  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+var LOWER  = 'abcdefghijklmnopqrstuvwxyz';
+var NUMS   = '0123456789';
+var SYMS   = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`';
+
+// ── Helpers ────────────────────────────────
+function getSecureRandom(max) {
+  var limit = Math.floor(0x100000000 / max) * max;
+  var arr = new Uint32Array(1);
+  do { crypto.getRandomValues(arr); } while (arr[0] >= limit);
+  return arr[0] % max;
+}
+
+function classifyChar(ch) {
+  if (UPPER.includes(ch) || LOWER.includes(ch)) return 'letter';
+  if (NUMS.includes(ch)) return 'number';
+  return 'symbol';
+}
+
+// ── Generate ───────────────────────────────
+function generatePassword() {
+  var len    = +document.getElementById('lengthSlider').value;
+  var useU   = document.getElementById('optUpper').checked;
+  var useL   = document.getElementById('optLower').checked;
+  var useN   = document.getElementById('optNumbers').checked;
+  var useS   = document.getElementById('optSymbols').checked;
+
+  var pool = '';
+  var required = [];  // guarantee at least one from each enabled set
+  var exclude = document.getElementById('optExclude').checked ? document.getElementById('excludeChars').value : '';
+  var filter = function(s) { return exclude ? s.split('').filter(function(c) { return !exclude.includes(c); }).join('') : s; };
+  var u = filter(UPPER), l = filter(LOWER), n = filter(NUMS), s = filter(SYMS);
+  if (useU && u) { pool += u; required.push(u); }
+  if (useL && l) { pool += l; required.push(l); }
+  if (useN && n) { pool += n; required.push(n); }
+  if (useS && s) { pool += s; required.push(s); }
+
+  if (!pool) {
+    renderDisplay(t('enableError'), true);
+    return;
+  }
+
+  // Build password
+  var chars = [];
+  // Guarantee one from each required set
+  for (var ri = 0; ri < required.length; ri++) {
+    var set = required[ri];
+    chars.push(set[getSecureRandom(set.length)]);
+  }
+  // Fill the rest
+  while (chars.length < len) {
+    chars.push(pool[getSecureRandom(pool.length)]);
+  }
+  // Shuffle (Fisher-Yates)
+  for (var i = chars.length - 1; i > 0; i--) {
+    var j = getSecureRandom(i + 1);
+    var tmp = chars[i]; chars[i] = chars[j]; chars[j] = tmp;
+  }
+
+  currentPassword = chars.join('');
+  renderDisplay(currentPassword);
+  updateStrength(currentPassword);
+  addToHistory(currentPassword);
+}
+
+// ── Render password with coloured characters ─
+function renderDisplay(text, isPlaceholder) {
+  var el = document.getElementById('pwText');
+  if (isPlaceholder) {
+    el.innerHTML = '<span class="ch-placeholder">' + escHtml(text) + '</span>';
+    return;
+  }
+  var html = '';
+  for (var ci = 0; ci < text.length; ci++) {
+    var ch = text[ci];
+    var cls = classifyChar(ch);
+    html += '<span class="ch-' + cls + '">' + escHtml(ch) + '</span>';
+  }
+  el.innerHTML = html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── Strength ───────────────────────────────
+function calcStrength(pw) {
+  var score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (pw.length >= 20) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[a-z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  if (score <= 2)      return { key: 'weak', color: 'var(--strength-weak)' };
+  if (score <= 4)      return { key: 'medium', color: 'var(--strength-medium)' };
+  if (score <= 5)      return { key: 'strong', color: 'var(--strength-strong)' };
+  return                      { key: 'vstrong', color: 'var(--strength-vstrong)' };
+}
+
+function updateStrength(pw) {
+  var s = calcStrength(pw);
+  var pct;
+  if (s.key === 'weak') pct = 25;
+  else if (s.key === 'medium') pct = 50;
+  else if (s.key === 'strong') pct = 75;
+  else pct = 100;
+
+  var fill  = document.getElementById('strengthFill');
+  var lbl   = document.getElementById('strengthLabel');
+  fill.style.width = pct + '%';
+  fill.style.background = s.color;
+  lbl.textContent = strengthLabel(s.key);
+  lbl.style.color = s.color;
+}
+
+// ── Copy ───────────────────────────────────
+var clipboardTimer = null;
+
+function clearClipboard() {
+  navigator.clipboard.writeText('').catch(function(){});
+  clipboardTimer = null;
+}
+
+function copyToClipboard(text, onSuccess) {
+  navigator.clipboard.writeText(text).then(function() {
+    if (clipboardTimer) clearTimeout(clipboardTimer);
+    clipboardTimer = setTimeout(clearClipboard, 30000);
+    onSuccess();
+  }).catch(function() {
+    // Fallback for non-secure contexts
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); onSuccess(); } catch(e) { /* silent */ }
+    document.body.removeChild(ta);
+  });
+}
+
+function copyPassword() {
+  if (!currentPassword) return;
+  copyToClipboard(currentPassword, function() {
+    var btn = document.getElementById('copyBtn');
+    btn.textContent = t('copied');
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.innerHTML = COPY_SVG + ' ' + t('copy');
+      btn.classList.remove('copied');
+    }, 1800);
+  });
+}
+
+// ── History ────────────────────────────────
+function addToHistory(pw) {
+  pwHistory.unshift(pw);
+  if (pwHistory.length > MAX_HISTORY) pwHistory.pop();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(pwHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  var el = document.getElementById('historyList');
+  if (pwHistory.length === 0) {
+    el.innerHTML = '<div class="history-empty">' + escHtml(t('historyEmpty')) + '</div>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < pwHistory.length; i++) {
+    var pw = pwHistory[i];
+    var s = calcStrength(pw);
+    html += '<div class="history-item">'
+      + '<span class="idx">#' + (i + 1) + '</span>'
+      + '<span class="pw">' + escHtml(pw) + '</span>'
+      + '<span class="str-badge" style="background:' + s.color + '">' + strengthLabel(s.key) + '</span>'
+      + '<button class="mini-copy" data-idx="' + i + '">' + t('copy') + '</button>'
+      + '</div>';
+  }
+  el.innerHTML = html;
+}
+
+// ── Event listeners ────────────────────────
+document.getElementById('copyBtn').addEventListener('click', copyPassword);
+document.getElementById('generateBtn').addEventListener('click', generatePassword);
+document.getElementById('lengthSlider').addEventListener('input', updateLengthDisplay);
+document.getElementById('clearHistory').addEventListener('click', function() {
+  pwHistory.length = 0;
+  localStorage.removeItem(STORAGE_KEY);
+  renderHistory();
+});
+document.getElementById('historyList').addEventListener('click', function(e) {
+  var btn = e.target.closest('.mini-copy');
+  if (!btn) return;
+  var idx = parseInt(btn.dataset.idx, 10);
+  if (isNaN(idx) || idx < 0 || idx >= pwHistory.length) return;
+  var pw = pwHistory[idx];
+  copyToClipboard(pw, function() {
+    btn.textContent = t('copied');
+    btn.style.background = 'var(--accent)';
+    btn.style.color = '#fff';
+    btn.style.borderColor = 'var(--accent)';
+    setTimeout(function() {
+      btn.textContent = t('copy');
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 1200);
+  });
+});
+
+// Language toggle
+document.getElementById('langToggle').addEventListener('click', function() {
+  setLang(currentLang === 'en' ? 'zh' : 'en');
+});
+
+// ── Slider display ─────────────────────────
+function updateLengthDisplay() {
+  document.getElementById('lengthValue').textContent =
+    document.getElementById('lengthSlider').value;
+}
+
+// ── Init ───────────────────────────────────
+if (pwHistory.length) renderHistory();
+
+// Detect language: localStorage > browser language
+var savedLang = localStorage.getItem(LANG_KEY);
+if (savedLang && LANG[savedLang]) {
+  currentLang = savedLang;
+} else {
+  currentLang = (navigator.language && navigator.language.startsWith('zh')) ? 'zh' : 'en';
+}
+setLang(currentLang);
+
+generatePassword();
+</script>
+</body>
+</html>

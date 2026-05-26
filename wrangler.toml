@@ -1,0 +1,9 @@
+name = "password-generator"
+compatibility_date = "2024-09-23"
+
+[assets]
+directory = "./dist"
+
+routes = [
+  { pattern = "password.mrwuliu.top", custom_domain = true }
+]
