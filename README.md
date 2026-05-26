@@ -19,7 +19,7 @@ A beautiful, Solarpunk-themed password generator. Fully client-side, zero depend
 ## Tech Stack
 
 - Vanilla HTML / CSS / JavaScript
-- Deployed on [Cloudflare Workers](https://workers.cloudflare.com/) (static assets)
+- Deployed on [Cloudflare Pages](https://pages.cloudflare.com/)
 - CI/CD via GitHub Actions — push a `v*` tag to deploy
 
 ## Deployment
@@ -32,13 +32,14 @@ git push origin v1.0.0
 
 GitHub Actions workflow (`.github/workflows/deploy.yml`) will:
 1. Build static assets into `dist/`
-2. Deploy to Cloudflare Workers via `wrangler`
+2. Deploy to Cloudflare Pages via `wrangler`
 
-### Required GitHub Secret
+### Required GitHub Secrets
 
 | Secret | Description |
 |--------|-------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers deployment permissions |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Pages deployment permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
 
 ## License
 

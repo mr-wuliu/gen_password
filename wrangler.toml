@@ -1,10 +1,4 @@
 name = "password-generator"
 account_id = "6487ff5137937b16e91c02fb42372f75"
+pages_build_output_dir = "./dist"
 compatibility_date = "2024-09-23"
-
-[assets]
-directory = "./dist"
-
-[[routes]]
-pattern = "password.mrwuliu.top"
-custom_domain = true
