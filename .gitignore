@@ -4,3 +4,5 @@ dist/
 .playwright-mcp/
 .wrangler/
 .dev.vars
+*.png
+*.jpg
